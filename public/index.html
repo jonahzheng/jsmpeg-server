@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>h264-live-player web client demo</title>
+  </head>
+  <body>
+    <h1>yo</h1>
+    <canvas id="video-canvas"></canvas>
+    <input type="text" name="stream-name" id="stream-name" value="cad3df86dfce77c135866d26009f7951" />
+    <button type="button" onclick="start()">Start Video</button>
+    <script type="text/javascript" src="jsmpeg.min.js"></script>
+    <script>
+        var canvas = document.getElementById('video-canvas');
+
+        var url = 'ws://' + document.location.host; //':8080/';
+		    var player = new JSMpeg.Player(url, {canvas: canvas});
+
+        function start(){
+          var streamName = document.getElementById('stream-name').value;
+          console.log("streamName ", streamName);
+          var message = "REQUESTSTREAM " + streamName;
+          player.source.send(message);
+          console.log("Sent " + message);
+        }
+        //.send("")
+    </script>
+  </body>
+</html>

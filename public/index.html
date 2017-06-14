@@ -1,25 +1,119 @@
-<html>
+<!DOCTYPE html>
   <head>
     <title>h264-live-player web client demo</title>
   </head>
   <body>
     <h1>yo</h1>
-    <canvas id="video-canvas"></canvas>
-    <input type="text" name="stream-name" id="stream-name" value="cad3df86dfce77c135866d26009f7951" />
-    <button type="button" onclick="start()">Start Video</button>
+    <div id="player-container">
+    </div>
+    <div class="jsmeg" />
+
+
+    <div id="result" style="color:red"></div>
+    <input type="text" name="stream-name" id="stream-name" value="471c1be5c3def9741e9e842850268217" />
+    <button type="button" onclick="start(1)">Start Video</button>
     <script type="text/javascript" src="jsmpeg.min.js"></script>
     <script>
-        var canvas = document.getElementById('video-canvas');
+
+        function callApi(){
+          //  https://www.thuis.nl/api/monitor/simple?key=LvmDo0XHZOZOULxPCJ9P
+
+        }
+        var getJSON = function(url) {
+            return new Promise(function(resolve, reject) {
+              var xhr = new XMLHttpRequest();
+              xhr.open('get', url, true);
+              xhr.responseType = 'json';
+              //xhr.setRequestHeader("Host", "http://api.thuis.nl");
+              //xhr.addHeader("Access-Control-Allow-Origin", "*");
+              xhr.onload = function() {
+                var status = xhr.status;
+                if (status == 200) {
+                  resolve(xhr.response);
+                } else {
+                  reject(status);
+                }
+              };
+              xhr.send();
+            });
+        };
+
+
+        function sleep (time) {
+          return new Promise((resolve) => setTimeout(resolve, time));
+        }
+        var container = document.getElementById('player-container');
 
         var url = 'ws://' + document.location.host; //':8080/';
-		    var player = new JSMpeg.Player(url, {canvas: canvas});
+        var i =0;
 
-        function start(){
-          var streamName = document.getElementById('stream-name').value;
-          console.log("streamName ", streamName);
-          var message = "REQUESTSTREAM " + streamName;
-          player.source.send(message);
-          console.log("Sent " + message);
+        function myLoop(data, i){
+            console.log(data.length + " " + i);
+            setTimeout(function(){
+               start(data[i].room_id);
+               i++;
+               if(i < data.length && i < 70){
+                  myLoop(data, i);
+               }
+            }, 100);
+
+        }
+        getJSON("http://www.thuis.nl/api/monitor/simple?key=LvmDo0XHZOZOULxPCJ9P").then(function(data){
+           result.innerText = data.result; //display the result in an HTML element
+           var x = 0;
+           console.log(data.length);
+           myLoop(data, 0);
+           //start(data[x])
+           /*data.forEach(function(item){
+
+              start(item.room_id);
+              await sleep(5000);
+              x++;
+           })*/
+        }, function(status){
+           alert("wrong status" + status);
+        });
+
+        function closed(player){
+            console.log("Closed player", player);
+            if(player){
+                container.removeChild(player.options.canvas);
+                player.destroy(); //add one
+
+                console.log("player destroyed");
+            }
+
+        }
+
+        function connected(player, streamName){
+            //console.log("started");
+
+            //console.log("streamName ", streamName);
+            var message = "REQUESTSTREAM " + streamName;
+            //await sleep(100);
+            //console.log("end sleep");
+            player.source.send(message);
+          //  console.log("Sent " + message);
+
+        }
+
+
+        function start(id){
+          var canvas = document.createElement("canvas");
+          canvas.setAttribute("id", "canvas" + i);
+          container.appendChild(canvas);
+
+          setTimeout(function(){
+            var player = new JSMpeg.Player(url, { canvas: canvas, disableGl: true, audio: false }, closed, connected);
+            var streamName = id;
+
+            setTimeout(function() {
+              connected(player, streamName)
+            }, 100);
+
+          }, 0);
+
+          i++;
         }
         //.send("")
     </script>
